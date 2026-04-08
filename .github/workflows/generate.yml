@@ -8,31 +8,38 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository A (Protos)
-        uses: actions/checkout@v3
+      - name: Checkout Protos
+        uses: actions/checkout@v4
 
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
       - name: Install Protoc & Plugins
         run: |
           sudo apt-get update && sudo apt-get install -y protobuf-compiler
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          export PATH="$PATH:$(go env GOPATH)/bin"
 
       - name: Generate Code
         run: |
-          mkdir -p gen/go
-          protoc --go_out=gen/go --go-grpc_out=gen/go payment/payment.proto
+          # Добавляем путь к бинарникам Go в PATH прямо перед генерацией
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          mkdir -p out
+          protoc --go_out=out --go-grpc_out=out payment/payment.proto
 
-      - name: Push to Repository B (Generated)
+      - name: Push to Generated Repo
         env:
           GH_TOKEN: ${{ secrets.PROTO_GEN_TOKEN }}
         run: |
-          # Переходим в папку со сгенерированным кодом
-          cd gen/go/github.com/Almukhammed77/order-payment-generated
+          GEN_PATH="out/github.com/Almukhammed77/order-payment-generated"
+          
+          cd $GEN_PATH
           git init
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
           git add .
-          git commit -m "Automated gRPC code generation"
+          git commit -m "Auto-update gRPC code"
           git remote add origin https://x-access-token:${GH_TOKEN}@github.com/Almukhammed77/order-payment-generated.git
           git push -f origin main
