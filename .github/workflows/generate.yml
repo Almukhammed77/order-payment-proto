@@ -19,14 +19,13 @@ jobs:
       - name: Install Protoc & Plugins
         run: |
           sudo apt-get update && sudo apt-get install -y protobuf-compiler
-          # Устанавливаем плагины
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
       - name: Generate Code
         run: |
           mkdir -p out
-          # Явно добавляем путь к бинарникам Go в текущую сессию
+          # Добавляем путь к бинарникам Go, чтобы protoc увидел плагины
           PATH=$PATH:$(go env GOPATH)/bin protoc \
             --go_out=out \
             --go-grpc_out=out \
@@ -36,12 +35,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROTO_GEN_TOKEN }}
         run: |
-          # Переходим в папку, созданную на основе go_package в .proto
-          cd out/github.com/Almukhammed77/order-payment-generated
+          # Путь должен соответствовать go_package из твоего .proto файла
+          GEN_PATH="out/github.com/Almukhammed77/order-payment-generated"
+          
+          if [ ! -d "$GEN_PATH" ]; then
+            echo "Ошибка: Директория $GEN_PATH не найдена!"
+            exit 1
+          fi
+
+          cd $GEN_PATH
           git init
+          # Принудительно создаем ветку main, чтобы избежать ошибки refspec
+          git checkout -b main
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add .
           git commit -m "Auto-update gRPC code"
           git remote add origin https://x-access-token:${GH_TOKEN}@github.com/Almukhammed77/order-payment-generated.git
+          # Отправляем изменения в репозиторий B
           git push -f origin main
