@@ -19,23 +19,25 @@ jobs:
       - name: Install Protoc & Plugins
         run: |
           sudo apt-get update && sudo apt-get install -y protobuf-compiler
+          
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
       - name: Generate Code
         run: |
-          # Добавляем путь к бинарникам Go в PATH прямо перед генерацией
-          export PATH="$PATH:$(go env GOPATH)/bin"
           mkdir -p out
-          protoc --go_out=out --go-grpc_out=out payment/payment.proto
+
+          PATH=$PATH:$(go env GOPATH)/bin protoc \
+            --go_out=out \
+            --go-grpc_out=out \
+            payment/payment.proto
 
       - name: Push to Generated Repo
         env:
           GH_TOKEN: ${{ secrets.PROTO_GEN_TOKEN }}
         run: |
-          GEN_PATH="out/github.com/Almukhammed77/order-payment-generated"
-          
-          cd $GEN_PATH
+
+          cd out/github.com/Almukhammed77/order-payment-generated
           git init
           git config user.name "github-actions"
           git config user.email "actions@github.com"
