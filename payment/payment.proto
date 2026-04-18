@@ -7,12 +7,22 @@ option go_package = "github.com/Almukhammed77/order-payment-generated/payment;pa
 import "google/protobuf/timestamp.proto";
 
 service PaymentService {
-
   rpc ProcessPayment (PaymentRequest) returns (PaymentResponse);
-
-
+  
   rpc SubscribeToOrderUpdates (OrderRequest) returns (stream OrderStatusUpdate);
+
+  rpc GetPaymentStats (GetPaymentStatsRequest) returns (PaymentStats);
 }
+
+message GetPaymentStatsRequest {}
+
+message PaymentStats {
+  int64 total_count = 1;
+  int64 authorized_count = 2;
+  int64 declined_count = 3;
+  int64 total_amount = 4; 
+}
+
 message PaymentRequest {
   string order_id = 1;
   int64 amount = 2; 
