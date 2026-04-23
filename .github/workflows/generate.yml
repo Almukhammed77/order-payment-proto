@@ -35,7 +35,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROTO_GEN_TOKEN }}
         run: |
-          # Путь должен соответствовать go_package из твоего .proto файла
           GEN_PATH="out/github.com/Almukhammed77/order-payment-generated"
           
           if [ ! -d "$GEN_PATH" ]; then
@@ -44,13 +43,15 @@ jobs:
           fi
 
           cd $GEN_PATH
+          go mod init github.com/Almukhammed77/order-payment-generated || true
+          go mod edit -go=1.21
+          go mod tidy
+
           git init
-          # Принудительно создаем ветку main, чтобы избежать ошибки refspec
           git checkout -b main
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add .
           git commit -m "Auto-update gRPC code"
           git remote add origin https://x-access-token:${GH_TOKEN}@github.com/Almukhammed77/order-payment-generated.git
-          # Отправляем изменения в репозиторий B
           git push -f origin main
